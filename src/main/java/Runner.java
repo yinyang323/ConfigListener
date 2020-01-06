@@ -1,25 +1,22 @@
 import Common.ApolloOpen;
 import Common.httpClient;
-import Common.jobId;
 import com.ctrip.framework.apollo.openapi.dto.OpenEnvClusterDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import java.sql.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 public class Runner {
     static private Connection conn = null;
     static private Statement stmt = null;
     static public Map<String, String> index = new HashMap<String, String>();
-    static private Map<Integer, String> rslist = new HashMap<Integer, String>();
+    static private List<String> rslist = new ArrayList<String>();
     static public httpClient hc = null;
     static private ApolloOpen apollo;
     static private String appid;
@@ -27,26 +24,31 @@ public class Runner {
     public static void main(String[] args) throws ClassNotFoundException, IOException, InterruptedException {
         final Logger logger = LoggerFactory.getLogger(Runner.class);
         hc = new httpClient();
+        /*for (jobId n:hc.getMethod(Runner.hc.getProp().getProperty("flink.rest.url")+"/jobs")
+             ) {
+            if(n.getStatus().equals("CANCELED"))
+            index.put("",n)
+        }*/
 
         Class.forName("com.mysql.cj.jdbc.Driver");
 
         appid = hc.getProp().getProperty("apollo.appid");
         apollo = new ApolloOpen(hc.getProp().getProperty("apollo.portalUrl"), hc.getProp().getProperty("apollo.token"));
 
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 200,
+  /*      ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 200,
                 TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<Runnable>(3));
+                new ArrayBlockingQueue<Runnable>(3));*/
 
         while (true) {
-            Thread.sleep(1000);
+            Thread.sleep(1*1000);
             if (!Compare()) {
-                List<jobId> jobs = hc.getMethod(hc.getProp().getProperty("flink.rest.url")+"/jobs");
                 for (int i = 0; i != rslist.size(); i++) {
                     String cn = rslist.get(i);
-                    ConfigListener listener = new ConfigListener(cn, jobs);
-                    executor.execute(listener);
-                    logger.info("线程池中线程数目：" + executor.getPoolSize() + "，队列中等待执行的任务数目：" +
-                            executor.getQueue().size() + "，已执行玩别的任务数目：" + executor.getCompletedTaskCount());
+                    ConfigListener listener = new ConfigListener(cn);
+                    listener.run();
+                    //executor.execute(listener);
+                    //logger.info("线程池中线程数目：" + executor.getPoolSize() + "，队列中等待执行的任务数目：" +
+                            //executor.getQueue().size() + "，已执行玩别的任务数目：" + executor.getCompletedTaskCount());
                 }
             }
         }
@@ -54,20 +56,19 @@ public class Runner {
 
     private static boolean Compare() {
         List<OpenEnvClusterDTO> list = apollo.getClient().getEnvClusterInfo(appid);
-        if (list.get(0).getClusters().size() != rslist.values().size()) {
-            Map<Integer, String> newinstances = new HashMap<Integer, String>();
-            int num = 0;
+        rslist.clear();
+        if (list.get(0).getClusters().size() != index.size()) {
+            List<String> instances = new ArrayList<String>();
             for (OpenEnvClusterDTO n : list) {
                 //n.setEnv("dev");
                 for (String n1 : n.getClusters()
                         ) {
-                    if (!rslist.values().contains(n1)) {
-                        newinstances.put(num, n1);
-                        num++;
+                    if (!index.containsKey(n1)) {
+                        instances.add(n1);
                     }
                 }
             }
-            rslist = newinstances;
+            rslist = instances;
             return false;
         } else
             return true;
