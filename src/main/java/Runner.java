@@ -35,9 +35,13 @@ public class Runner {
         appid = hc.getProp().getProperty("apollo.appid");
         apollo = new ApolloOpen(hc.getProp().getProperty("apollo.portalUrl"), hc.getProp().getProperty("apollo.token"));
 
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 200,
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(2, 5, 200,
                 TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<Runnable>(3));
+                new ArrayBlockingQueue<Runnable>(1));
+
+        executor.execute(cj);
+        logger.info("线程池中线程数目：" + executor.getPoolSize() + "，队列中等待执行的任务数目：" +
+                executor.getQueue().size() + "，已执行玩别的任务数目：" + executor.getCompletedTaskCount());
 
         while (true) {
             Thread.sleep(1 * 1000);
@@ -46,9 +50,6 @@ public class Runner {
                     String cn = rslist.get(i);
                     ConfigListener listener = new ConfigListener(cn);
                     listener.run();
-                    executor.execute(cj);
-                    logger.info("线程池中线程数目：" + executor.getPoolSize() + "，队列中等待执行的任务数目：" +
-                            executor.getQueue().size() + "，已执行玩别的任务数目：" + executor.getCompletedTaskCount());
                 }
             }
         }
