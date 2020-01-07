@@ -41,7 +41,7 @@ public class ConfigListener implements Runnable {
     /*判断新建作业是否已经提交，若没有则递归*/
     private void ansis() throws InterruptedException {
         try {
-            List<jobId> runjobs=runningJob(Runner.hc.getMethod(Runner.hc.getProp().getProperty("flink.rest.url") + "/jobs"));
+            List<jobId> runjobs = runningJob(Runner.hc.getMethod(Runner.hc.getProp().getProperty("flink.rest.url") + "/jobs"));
             if (Runner.index.size() != runjobs.size()) {
                 Contrast(runjobs);
             } else {
@@ -57,8 +57,8 @@ public class ConfigListener implements Runnable {
     private void Contrast(List<jobId> jobs) {
         if (jobs.size() != 0) {
             for (jobId n : jobs) {
-                if (!Runner.index.values().contains(n.getId())) {
-                    synchronized (Runner.o) {
+                synchronized (Runner.o) {
+                    if (!Runner.index.values().contains(n.getId())) {
                         Runner.index.put(clusterName, n.getId());
                     }
                 }
@@ -66,11 +66,11 @@ public class ConfigListener implements Runnable {
         }
     }
 
-    private List<jobId> runningJob(List<jobId> jobs){
+    private List<jobId> runningJob(List<jobId> jobs) {
         List<jobId> runs = new ArrayList<jobId>();
-        for (jobId n:jobs
-             ) {
-            if(n.getStatus().equals("RUNNING")){
+        for (jobId n : jobs
+                ) {
+            if (n.getStatus().equals("RUNNING")) {
                 runs.add(n);
             }
         }

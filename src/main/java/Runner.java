@@ -64,8 +64,10 @@ public class Runner {
                 //n.setEnv("dev");
                 for (String n1 : n.getClusters()
                         ) {
-                    if (!index.containsKey(n1)) {
-                        instances.add(n1);
+                    synchronized (o) {
+                        if (!index.containsKey(n1)) {
+                            instances.add(n1);
+                        }
                     }
                 }
             }
