@@ -16,7 +16,7 @@ public class CheckJob implements Runnable {
                     synchronized (Runner.o) {
                         for (Iterator<Map.Entry<String, String>> it = Runner.index.entrySet().iterator(); it.hasNext(); ) {
                             Map.Entry<String, String> item = it.next();
-                            if(!runjobs.contains(item.getValue()))
+                            if (!runjobs.contains(item.getValue()))
                                 it.remove();
                         }
                     }

@@ -16,28 +16,29 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class Runner {
-    static private Connection conn = null;
-    static private Statement stmt = null;
+    //static private Connection conn = null;
+    //static private Statement stmt = null;
     static public Map<String, String> index = new HashMap<String, String>();
     static private List<String> rslist = new ArrayList<String>();
     static public httpClient hc = null;
     static private ApolloOpen apollo;
     static private String appid;
-    static public final Object o=new Object();
+    static public final Object o = new Object();
+    static Logger logger;
 
     public static void main(String[] args) throws ClassNotFoundException, IOException, InterruptedException {
-        final Logger logger = LoggerFactory.getLogger(Runner.class);
+        logger = LoggerFactory.getLogger(Runner.class);
         hc = new httpClient();
-        CheckJob cj=new CheckJob();
+        CheckJob cj = new CheckJob();
 
         Class.forName("com.mysql.cj.jdbc.Driver");
 
         appid = hc.getProp().getProperty("apollo.appid");
         apollo = new ApolloOpen(hc.getProp().getProperty("apollo.portalUrl"), hc.getProp().getProperty("apollo.token"));
 
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(2, 5, 200,
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 200,
                 TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<Runnable>(1));
+                new ArrayBlockingQueue<Runnable>(5));
 
         executor.execute(cj);
         logger.info("线程池中线程数目：" + executor.getPoolSize() + "，队列中等待执行的任务数目：" +
@@ -55,7 +56,7 @@ public class Runner {
         }
     }
 
-    private static boolean Compare() {
+    private static boolean Compare() throws InterruptedException {
         List<OpenEnvClusterDTO> list = apollo.getClient().getEnvClusterInfo(appid);
         rslist.clear();
         if (list.get(0).getClusters().size() != index.size()) {
@@ -67,17 +68,20 @@ public class Runner {
                     synchronized (o) {
                         if (!index.containsKey(n1)) {
                             instances.add(n1);
+                            logger.info(String.format("发现集群%s", n1));
                         }
                     }
                 }
             }
+            logger.info(String.format("共发现%s个新增集群，请在%s分钟内完成集群的配置发布！", instances.size(), instances.size() * Integer.parseInt(Runner.hc.getProp().getProperty("create.wait.time"))));
+            Thread.sleep(instances.size() * Integer.parseInt(Runner.hc.getProp().getProperty("create.wait.time")) * 60 * 1000);
             rslist = instances;
             return false;
         } else
             return true;
     }
 
-    private static Map<Integer, String> getMysql(String _sql) {
+   /* private static Map<Integer, String> getMysql(String _sql) {
         Map<Integer, String> rslist1 = new HashMap<Integer, String>();
         try {
             conn = DriverManager.getConnection("jdbc:mysql://192.168.191.131:3306/ApolloConfigDB?useSSL=false&serverTimezone=UTC", "root", "acer77e");
@@ -125,7 +129,5 @@ public class Runner {
             }
         }
         return rslist1;
-    }
-
-
+    }*/
 }
