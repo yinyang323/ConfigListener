@@ -58,7 +58,9 @@ public class ConfigListener implements Runnable {
         if (jobs.size() != 0) {
             for (jobId n : jobs) {
                 if (!Runner.index.values().contains(n.getId())) {
-                    Runner.index.put(clusterName, n.getId());
+                    synchronized (Runner.o) {
+                        Runner.index.put(clusterName, n.getId());
+                    }
                 }
             }
         }
