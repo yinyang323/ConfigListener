@@ -68,7 +68,7 @@ public class Runner {
                     synchronized (o) {
                         if (!index.containsKey(n1)) {
                             instances.add(n1);
-                            logger.info(String.format("发现集群%s", n1));
+                            logger.info(String.format("发现集群%s没有对应作业", n1));
                         }
                     }
                 }
