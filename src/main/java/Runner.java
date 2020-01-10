@@ -33,7 +33,7 @@ public class Runner {
 
         Class.forName("com.mysql.cj.jdbc.Driver");
 
-        appid = hc.getProp().getProperty("apollo.appid");
+        appid = hc.getProp().getProperty("app.id");
         apollo = new ApolloOpen(hc.getProp().getProperty("apollo.portalUrl"), hc.getProp().getProperty("apollo.token"));
 
         ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 200,
