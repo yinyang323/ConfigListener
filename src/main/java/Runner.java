@@ -1,6 +1,7 @@
 import Common.ApolloOpen;
 import Common.httpClient;
 import com.ctrip.framework.apollo.openapi.dto.OpenEnvClusterDTO;
+import com.ctrip.framework.apollo.openapi.dto.OpenReleaseDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +24,7 @@ public class Runner {
     static public httpClient hc = null;
     static private ApolloOpen apollo;
     static private String appid;
+    static private String env;
     static public final Object o = new Object();
     static Logger logger;
 
@@ -34,6 +36,7 @@ public class Runner {
         Class.forName("com.mysql.cj.jdbc.Driver");
 
         appid = hc.getProp().getProperty("app.id");
+        env = hc.getProp().getProperty("env");
         apollo = new ApolloOpen(hc.getProp().getProperty("apollo.portalUrl"), hc.getProp().getProperty("apollo.token"));
 
         ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 200,
@@ -62,13 +65,16 @@ public class Runner {
         if (list.get(0).getClusters().size() != index.size()) {
             List<String> instances = new ArrayList<String>();
             for (OpenEnvClusterDTO n : list) {
-                //n.setEnv("dev");
+                //n.setEnv(env);
                 for (String n1 : n.getClusters()
                         ) {
                     synchronized (o) {
                         if (!index.containsKey(n1)) {
-                            instances.add(n1);
-                            logger.info(String.format("发现集群%s没有对应作业", n1));
+                            OpenReleaseDTO msg=apollo.getClient().getLatestActiveRelease(appid, env, n1, "application");
+                            if (msg!=null) {
+                                instances.add(n1);
+                                logger.info(String.format("发现集群%s没有对应作业", n1));
+                            }
                         }
                     }
                 }
