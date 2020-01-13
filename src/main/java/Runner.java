@@ -73,14 +73,14 @@ public class Runner {
                             OpenReleaseDTO msg=apollo.getClient().getLatestActiveRelease(appid, env, n1, "application");
                             if (msg!=null) {
                                 instances.add(n1);
-                                logger.info(String.format("发现集群%s没有对应作业", n1));
+                                logger.info(String.format("发现集群%s已发布,但没有对应作业", n1));
                             }
                         }
                     }
                 }
             }
-            logger.info(String.format("共发现%s个新增集群，请在%s分钟内完成集群的配置发布！", instances.size(), instances.size() * Integer.parseInt(Runner.hc.getProp().getProperty("create.wait.time"))));
-            Thread.sleep(instances.size() * Integer.parseInt(Runner.hc.getProp().getProperty("create.wait.time")) * 60 * 1000);
+            //logger.info(String.format("共发现%s个新增集群，请在%s分钟内完成集群的配置发布！", instances.size(), instances.size() * Integer.parseInt(Runner.hc.getProp().getProperty("create.wait.time"))));
+            //Thread.sleep(instances.size() * Integer.parseInt(Runner.hc.getProp().getProperty("create.wait.time")) * 60 * 1000);
             rslist = instances;
             return false;
         } else
