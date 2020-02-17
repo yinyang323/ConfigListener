@@ -2,6 +2,7 @@ import Common.ApolloOpen;
 import Common.httpClient;
 import com.ctrip.framework.apollo.openapi.dto.OpenEnvClusterDTO;
 import com.ctrip.framework.apollo.openapi.dto.OpenReleaseDTO;
+import org.apache.log4j.helpers.OptionConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +49,7 @@ public class Runner {
                 executor.getQueue().size() + "，已执行玩别的任务数目：" + executor.getCompletedTaskCount());
 
         while (true) {
-            Thread.sleep(1 * 1000);
+            Thread.sleep(OptionConverter.toInt(hc.getProp().getProperty("listen.polling.time"),60)* 1000);
             if (!Compare()) {
                 for (int i = 0; i != rslist.size(); i++) {
                     String cn = rslist.get(i);

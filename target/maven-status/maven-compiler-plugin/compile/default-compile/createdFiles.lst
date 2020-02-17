@@ -1,4 +1,6 @@
 Common\jobId.class
 Common\httpClient.class
+Common\ApolloOpen.class
 ConfigListener.class
+CheckJob.class
 Runner.class
