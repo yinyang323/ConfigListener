@@ -50,12 +50,17 @@ public class Runner {
 
         while (true) {
             Thread.sleep(OptionConverter.toInt(hc.getProp().getProperty("listen.polling.time"),60)* 1000);
-            if (!Compare()) {
-                for (int i = 0; i != rslist.size(); i++) {
-                    String cn = rslist.get(i);
-                    ConfigListener listener = new ConfigListener(cn);
-                    listener.run();
+            try {
+                if (!Compare()) {
+                    for (int i = 0; i != rslist.size(); i++) {
+                        String cn = rslist.get(i);
+                        ConfigListener listener = new ConfigListener(cn);
+                        listener.run();
+                    }
                 }
+            }
+            catch (Exception ex){
+                logger.error(ex.getMessage());
             }
         }
     }
