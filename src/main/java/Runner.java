@@ -65,7 +65,7 @@ public class Runner {
         }
     }
 
-    private static boolean Compare() throws InterruptedException {
+    private static boolean Compare() throws Exception {
         List<OpenEnvClusterDTO> list = apollo.getClient().getEnvClusterInfo(appid);
         rslist.clear();
         if (list.get(0).getClusters().size() != index.size()) {
