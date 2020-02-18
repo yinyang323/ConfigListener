@@ -34,7 +34,7 @@ public class Runner {
         hc = new httpClient();
         CheckJob cj = new CheckJob();
 
-        Class.forName("com.mysql.cj.jdbc.Driver");
+        //Class.forName("com.mysql.cj.jdbc.Driver");
 
         appid = hc.getProp().getProperty("app.id");
         env = hc.getProp().getProperty("env");
