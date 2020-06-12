@@ -1,6 +1,8 @@
-Common\jobId.class
+entity\Job.class
 Common\httpClient.class
 Common\ApolloOpen.class
+entity\JsonRootBean.class
 ConfigListener.class
+entity\Tasks.class
 CheckJob.class
 Runner.class

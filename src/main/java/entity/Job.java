@@ -15,7 +15,7 @@ public class Job {
     private String name;
     private String state;
     private long start_time;
-    private int end_time;
+    private long end_time;
     private long duration;
     private long last_modification;
     private Tasks tasks;
@@ -50,7 +50,7 @@ public class Job {
     public void setEnd_time(int end_time) {
         this.end_time = end_time;
     }
-    public int getEnd_time() {
+    public long getEnd_time() {
         return end_time;
     }
 
