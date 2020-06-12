@@ -2,6 +2,7 @@ package Common;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import entity.Job;
 import okhttp3.*;
 
 import java.io.IOException;
@@ -27,7 +28,7 @@ public class httpClient {
         //this.logger = LoggerFactory.getLogger(httpClient.class);
     }
 
-    public List<jobId> getMethod(String url) throws IOException {
+    public List<Job> getMethod(String url) throws IOException {
         Request request = new Request.Builder()
                 .url(url)
                 .get()
@@ -39,15 +40,15 @@ public class httpClient {
         //logger.info("获取作业信息：" + _result);
 
         if (_result.contains("[]"))
-            return new ArrayList<jobId>();
+            return new ArrayList<Job>();
         else
             return Deserialize(_result);
     }
 
-    private List<jobId> Deserialize(String result) {
+    private List<Job> Deserialize(String result) {
         JSONObject jsonobj = JSON.parseObject(result);
         String array = jsonobj.get("jobs").toString();
-        List<jobId> jobs = JSON.parseArray(array, jobId.class);
+        List<Job> jobs = JSON.parseArray(array, Job.class);
         //System.out.println("jobs:" + jobs);
         return jobs;
     }

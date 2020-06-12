@@ -7,10 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import java.sql.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -20,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 public class Runner {
     //static private Connection conn = null;
     //static private Statement stmt = null;
-    static public Map<String, String> index = new HashMap<String, String>();
+    static public List<String> index = new ArrayList<String>();
     static private List<String> rslist = new ArrayList<String>();
     static public httpClient hc = null;
     static private ApolloOpen apollo;
@@ -49,40 +46,35 @@ public class Runner {
                 executor.getQueue().size() + "，已执行玩别的任务数目：" + executor.getCompletedTaskCount());
 
         while (true) {
-            Thread.sleep(OptionConverter.toInt(hc.getProp().getProperty("listen.polling.time"),60)* 1000);
+            Thread.sleep(OptionConverter.toInt(hc.getProp().getProperty("listen.polling.time"), 60) * 1000);
             if (!Compare()) {
-                for (int i = 0; i != rslist.size(); i++) {
-                    String cn = rslist.get(i);
-                    ConfigListener listener = new ConfigListener(cn);
-                    listener.run();
+                if (rslist.size() != 0) {
+                    for (String cn : rslist) {
+                        ConfigListener listener = new ConfigListener(cn);
+                        listener.run();
+                    }
                 }
             }
         }
     }
 
-    private static boolean Compare() throws InterruptedException {
+    private static boolean Compare() {
         List<OpenEnvClusterDTO> list = apollo.getClient().getEnvClusterInfo(appid);
         rslist.clear();
-        if (list.get(0).getClusters().size() != index.size()) {
-            List<String> instances = new ArrayList<String>();
-            for (OpenEnvClusterDTO n : list) {
+        Set<String> clusters = list.get(0).getClusters();
+        if (clusters.size() != index.size()) {
+            for (String n : clusters) {
                 //n.setEnv(env);
-                for (String n1 : n.getClusters()
-                        ) {
-                    synchronized (o) {
-                        if (!index.containsKey(n1)) {
-                            OpenReleaseDTO msg=apollo.getClient().getLatestActiveRelease(appid, env, n1, "application");
-                            if (msg!=null) {
-                                instances.add(n1);
-                                logger.info(String.format("发现集群%s已发布,但没有对应作业", n1));
-                            }
-                        }
+                if (!index.contains("数据交换平台智能路由"+n)) {
+                    OpenReleaseDTO msg = apollo.getClient().getLatestActiveRelease(appid, env, n, "application");
+                    if (msg != null) {
+                        rslist.add(n);
+                        logger.info(String.format("发现集群%s已发布,但没有对应作业", n));
                     }
                 }
             }
             //logger.info(String.format("共发现%s个新增集群，请在%s分钟内完成集群的配置发布！", instances.size(), instances.size() * Integer.parseInt(Runner.hc.getProp().getProperty("create.wait.time"))));
             //Thread.sleep(instances.size() * Integer.parseInt(Runner.hc.getProp().getProperty("create.wait.time")) * 60 * 1000);
-            rslist = instances;
             return false;
         } else
             return true;
