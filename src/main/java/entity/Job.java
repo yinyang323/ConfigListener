@@ -47,7 +47,7 @@ public class Job {
         return start_time;
     }
 
-    public void setEnd_time(int end_time) {
+    public void setEnd_time(long end_time) {
         this.end_time = end_time;
     }
     public long getEnd_time() {
