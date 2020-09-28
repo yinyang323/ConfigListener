@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 
-import java.sql.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -17,14 +16,16 @@ import java.util.concurrent.TimeUnit;
 public class Runner {
     //static private Connection conn = null;
     //static private Statement stmt = null;
-    static public List<String> index = new ArrayList<String>();
-    static private List<String> rslist = new ArrayList<String>();
+    static public Map<String, String> index = new HashMap<String, String>();//用于存储正在运行的flink作业名和jobid
+    static public Map<String, String> oldsqls = new HashMap<String, String>();//用于存储各集群对应的sql
+    static private List<String> rslist = new ArrayList<String>();//用于存储已发布配置但未启动作业的集群名
     static public httpClient hc = null;
     static private ApolloOpen apollo;
     static private String appid;
     static private String env;
     static public final Object o = new Object();
-    static Logger logger;
+    static public Logger logger;
+    static private Map<String, Date> _modifyTime = new HashMap<String, Date>();//用于存储各集群的最新修改时间
 
     public static void main(String[] args) throws ClassNotFoundException, IOException, InterruptedException {
         logger = LoggerFactory.getLogger(Runner.class);
@@ -37,6 +38,8 @@ public class Runner {
         env = hc.getProp().getProperty("env");
         apollo = new ApolloOpen(hc.getProp().getProperty("apollo.portalUrl"), hc.getProp().getProperty("apollo.token"));
 
+        Initsql();//获取所有集群的sql配置，并保存到内存中
+
         ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 200,
                 TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<Runnable>(5));
@@ -47,37 +50,59 @@ public class Runner {
 
         while (true) {
             Thread.sleep(OptionConverter.toInt(hc.getProp().getProperty("listen.polling.time"), 60) * 1000);
-            if (!Compare()) {
-                if (rslist.size() != 0) {
-                    for (String cn : rslist) {
-                        ConfigListener listener = new ConfigListener(cn);
-                        listener.run();
+            Compare();
+            if (rslist.size() != 0) {
+                for (String clusterName : rslist) {
+                    if (!Runner.index.keySet().contains("数据交换平台智能路由-" + clusterName)) {
+                        Runner.index.put("数据交换平台智能路由-" + clusterName, "");
+                    } else {
+                        Runner.index.put("数据交换平台智能路由-" + clusterName, "sql updated");
                     }
                 }
             }
         }
     }
 
-    private static boolean Compare() {
+    private static void Initsql() {
         List<OpenEnvClusterDTO> list = apollo.getClient().getEnvClusterInfo(appid);
+        Set<String> clusters = list.get(0).getClusters();
+        for (String n : clusters
+                ) {
+            OpenReleaseDTO msg = apollo.getClient().getLatestActiveRelease(appid, env, n, "application");
+            oldsqls.put(n, msg.getConfigurations().get("sql"));
+        }
+    }
+
+    private static void Compare() {
+        List<OpenEnvClusterDTO> list = apollo.getClient().getEnvClusterInfo(appid);
+
         rslist.clear();
         Set<String> clusters = list.get(0).getClusters();
-        if (clusters.size() != index.size()) {
-            for (String n : clusters) {
-                //n.setEnv(env);
-                if (!index.contains("数据交换平台智能路由"+n)) {
-                    OpenReleaseDTO msg = apollo.getClient().getLatestActiveRelease(appid, env, n, "application");
-                    if (msg != null) {
-                        rslist.add(n);
-                        logger.info(String.format("发现集群%s已发布,但没有对应作业", n));
-                    }
+
+        for (String n : clusters) {
+            //n.setEnv(env);
+            OpenReleaseDTO msg = apollo.getClient().getLatestActiveRelease(appid, env, n, "application");
+            String sql = msg.getConfigurations().get("sql");
+            if (!_modifyTime.containsKey(n)) {
+                _modifyTime.put(n, msg.getDataChangeLastModifiedTime());//新增
+            } else if (_modifyTime.get(n).before(msg.getDataChangeLastModifiedTime())) {
+                if (!sql.equals(oldsqls.get(n))) {
+                    rslist.add(n);
+                    oldsqls.put(n, sql);//更新
+                    _modifyTime.put(n, msg.getDataChangeLastModifiedTime());//更新
+                    logger.info(String.format("Find cluster %s sql logic is modified", n));
                 }
             }
-            //logger.info(String.format("共发现%s个新增集群，请在%s分钟内完成集群的配置发布！", instances.size(), instances.size() * Integer.parseInt(Runner.hc.getProp().getProperty("create.wait.time"))));
-            //Thread.sleep(instances.size() * Integer.parseInt(Runner.hc.getProp().getProperty("create.wait.time")) * 60 * 1000);
-            return false;
-        } else
-            return true;
+            if (!index.keySet().contains("数据交换平台智能路由-" + n)) {
+                if (!rslist.contains(n))
+                    rslist.add(n);
+                oldsqls.put(n, sql);//新增
+                logger.info(String.format("Find cluster %s config is published, but there is no processor", n));
+            }
+        }
+
+        //logger.info(String.format("共发现%s个新增集群，请在%s分钟内完成集群的配置发布！", instances.size(), instances.size() * Integer.parseInt(Runner.hc.getProp().getProperty("create.wait.time"))));
+        //Thread.sleep(instances.size() * Integer.parseInt(Runner.hc.getProp().getProperty("create.wait.time")) * 60 * 1000);
     }
 
    /* private static Map<Integer, String> getMysql(String _sql) {
