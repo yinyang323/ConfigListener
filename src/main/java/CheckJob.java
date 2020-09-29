@@ -25,19 +25,19 @@ public class CheckJob implements Runnable {
                 if (Runner.index.size() == 0 && jobInfo.size() != 0) {
                     Runner.index.putAll(jobInfo);
                 }
-                /*判断运行状态*/
-                if (Runner.index.size() > runjobs.size()) {
-                    synchronized (Runner.o) {
-                        for (Iterator<String> it = Runner.index.keySet().iterator(); it.hasNext(); ) {
-                            String item = it.next();
-                            if ((!jobInfo.keySet().contains(item)) && (Runner.index.get(item).equals(""))) {
-                                startJob(item.replace("数据交换平台智能路由-", ""));
-                                Runner.logger.info("Started new processor for cluster {},please check it", item.replace("数据交换平台智能路由-", ""));
+                synchronized (Runner.o) {
+                    /*判断运行状态*/
+                    if (Runner.index.size() > runjobs.size()) {
+                        {
+                            for (Iterator<String> it = Runner.index.keySet().iterator(); it.hasNext(); ) {
+                                String item = it.next();
+                                if ((!jobInfo.containsKey(item)) && (Runner.index.get(item).equals(""))) {
+                                    startJob(item.replace("数据交换平台智能路由-", ""));
+                                    Runner.logger.info("Started new processor for cluster {}, please check it", item.replace("数据交换平台智能路由-", ""));
+                                }
                             }
                         }
-                    }
-                } else if (Runner.index.size() < runjobs.size()) {
-                    synchronized (Runner.o) {
+                    } else if (Runner.index.size() < runjobs.size()) {
                         for (Iterator<String> it = jobInfo.values().iterator(); it.hasNext(); ) {
                             String item = it.next();
                             if (!Runner.index.values().contains(item)) {
@@ -45,23 +45,22 @@ public class CheckJob implements Runnable {
                                 Runner.logger.info("Find unnecessary processor, and stopped it");
                             }
                         }
-                    }
-                } else if (Runner.index.values().contains("sql updated")) {
-                    synchronized (Runner.o) {
+                    } else if (Runner.index.values().contains("sql updated")) {
+
                         for (Iterator<String> it = Runner.index.keySet().iterator(); it.hasNext(); ) {
                             String item = it.next();
                             if (!Runner.index.get(item).equals("")) {
                                 cancelJob(jobInfo.get(item));
                                 startJob(item.replace("数据交换平台智能路由-", ""));
-                                Runner.logger.info("Restart processor for cluster {},please check it", item.replace("数据交换平台智能路由-", ""));
+                                Runner.logger.info("Restart processor for cluster {}, please check it", item.replace("数据交换平台智能路由-", ""));
                             }
                         }
                     }
                 }
                 Thread.sleep(OptionConverter.toInt(Runner.hc.getProp().getProperty("check.timespan"), 5) * 1000);
-            } catch (IOException e) {
-                e.printStackTrace();
             } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
@@ -88,28 +87,18 @@ public class CheckJob implements Runnable {
     private void ansis() throws InterruptedException {
         try {
             runjobs = runningJob(Runner.hc.getMethod(Runner.hc.getProp().getProperty("flink.rest.url") + "/jobs/overview"));
-            if (Runner.index.size() != runjobs.size()) {
-                Contrast(runjobs);
-            } else {
-                /*作业提交需要时间，等待作业提交完毕*/
-                Thread.sleep(1 * 1000);
-                ansis();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /*添加新增作业的信息*/
-    private void Contrast(List<Job> jobs) {
-        if (jobs.size() != 0) {
-            for (Job n : jobs) {
-                synchronized (Runner.o) {
-                    if (!Runner.index.keySet().contains(n.getName())) {
-                        Runner.index.put(n.getName(), n.getJid());
-                    }
+            for (Iterator<Job> it = runjobs.iterator(); it.hasNext(); ) {
+                Job item = it.next();
+                if (!Runner.index.values().contains(item.getJid())) {
+                    Runner.index.put(item.getName(), item.getJid());
+                    return;
                 }
             }
+            /*作业提交需要时间，等待作业提交完毕*/
+            Thread.sleep(1 * 1000);
+            ansis();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

@@ -45,18 +45,20 @@ public class Runner {
                 new ArrayBlockingQueue<Runnable>(5));
 
         executor.execute(cj);
-        logger.info("线程池中线程数目：" + executor.getPoolSize() + "，队列中等待执行的任务数目：" +
-                executor.getQueue().size() + "，已执行玩别的任务数目：" + executor.getCompletedTaskCount());
+        logger.info("线程池中线程数目:" + executor.getPoolSize() + ",队列中等待执行的任务数目:" +
+                executor.getQueue().size() + ",已执行玩别的任务数目:" + executor.getCompletedTaskCount());
 
         while (true) {
             Thread.sleep(OptionConverter.toInt(hc.getProp().getProperty("listen.polling.time"), 60) * 1000);
             Compare();
             if (rslist.size() != 0) {
                 for (String clusterName : rslist) {
-                    if (!Runner.index.keySet().contains("数据交换平台智能路由-" + clusterName)) {
-                        Runner.index.put("数据交换平台智能路由-" + clusterName, "");
-                    } else {
-                        Runner.index.put("数据交换平台智能路由-" + clusterName, "sql updated");
+                    synchronized (Runner.o) {
+                        if (!Runner.index.keySet().contains("数据交换平台智能路由-" + clusterName)) {
+                            Runner.index.put("数据交换平台智能路由-" + clusterName, "");
+                        } else {
+                            Runner.index.put("数据交换平台智能路由-" + clusterName, "sql updated");
+                        }
                     }
                 }
             }
@@ -100,7 +102,6 @@ public class Runner {
                 logger.info(String.format("Find cluster %s config is published, but there is no processor", n));
             }
         }
-
         //logger.info(String.format("共发现%s个新增集群，请在%s分钟内完成集群的配置发布！", instances.size(), instances.size() * Integer.parseInt(Runner.hc.getProp().getProperty("create.wait.time"))));
         //Thread.sleep(instances.size() * Integer.parseInt(Runner.hc.getProp().getProperty("create.wait.time")) * 60 * 1000);
     }
