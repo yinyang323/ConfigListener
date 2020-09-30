@@ -42,13 +42,13 @@ public class CheckJob implements Runnable {
                             String item = it.next();
                             if (!Runner.index.values().contains(item)) {
                                 cancelJob(item);
-                                Runner.logger.info("Find unnecessary processor, and stopped it");
+                                Runner.logger.info("Find unnecessary processor, stopped it");
                             }
                         }
                     } else if (Runner.index.values().contains("sql updated")) {
                         for (Iterator<String> it = Runner.index.keySet().iterator(); it.hasNext(); ) {
                             String item = it.next();
-                            if (!Runner.index.get(item).equals("")) {
+                            if (Runner.index.get(item).equals("sql updated")) {
                                 cancelJob(jobInfo.get(item));
                                 startJob(item.replace("数据交换平台智能路由-", ""));
                                 Runner.logger.info("Restart processor for cluster {}, please check it", item.replace("数据交换平台智能路由-", ""));
