@@ -27,17 +27,17 @@ public class CheckJob implements Runnable {
                 }
                 synchronized (Runner.o) {
                     /*判断运行状态*/
-                    if (Runner.index.size() > runjobs.size()) {
+                    if (Runner.index.size() > jobInfo.size()) {
                         {
                             for (Iterator<String> it = Runner.index.keySet().iterator(); it.hasNext(); ) {
                                 String item = it.next();
-                                if ((!jobInfo.containsKey(item)) && (Runner.index.get(item).equals(""))) {
+                                if (!jobInfo.containsKey(item)) {
                                     startJob(item.replace("数据交换平台智能路由-", ""));
                                     Runner.logger.info("Started new processor for cluster {}, please check it", item.replace("数据交换平台智能路由-", ""));
                                 }
                             }
                         }
-                    } else if (Runner.index.size() < runjobs.size()) {
+                    } else if (Runner.index.size() < jobInfo.size()) {
                         for (Iterator<String> it = jobInfo.values().iterator(); it.hasNext(); ) {
                             String item = it.next();
                             if (!Runner.index.values().contains(item)) {
