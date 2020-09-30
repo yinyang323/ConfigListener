@@ -46,7 +46,6 @@ public class CheckJob implements Runnable {
                             }
                         }
                     } else if (Runner.index.values().contains("sql updated")) {
-
                         for (Iterator<String> it = Runner.index.keySet().iterator(); it.hasNext(); ) {
                             String item = it.next();
                             if (!Runner.index.get(item).equals("")) {

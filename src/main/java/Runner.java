@@ -91,9 +91,9 @@ public class Runner {
                 if (!sql.equals(oldsqls.get(n))) {
                     rslist.add(n);
                     oldsqls.put(n, sql);//更新
-                    _modifyTime.put(n, msg.getDataChangeLastModifiedTime());//更新
                     logger.info(String.format("Find cluster %s sql logic is modified", n));
                 }
+                _modifyTime.put(n, msg.getDataChangeLastModifiedTime());//更新
             }
             if (!index.keySet().contains("数据交换平台智能路由-" + n)) {
                 if (!rslist.contains(n))
